@@ -1,0 +1,108 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  STUDENT
+  ADMIN
+}
+
+enum ListingStatus {
+  AVAILABLE
+  SOLD
+}
+
+enum BorrowRequestStatus {
+  OPEN
+  FULFILLED
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String?
+  name        String?
+  phoneNumber String?
+  campus      String?
+  hostel      String?
+  role        UserRole @default(STUDENT)
+  googleId    String?  @unique
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  listings         Listing[]
+  borrowRequests   BorrowRequest[]
+  nightMarketPosts NightMarketPost[]
+
+  @@map("users")
+}
+
+model Listing {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  category    String
+  price       Float
+  condition   String
+  location    String        @default("Campus") // Hostel or location
+  whatsapp    String?       // WhatsApp contact
+  negotiable  Boolean       @default(false)
+  imageUrls   String[]      // Array of image URLs
+  qrUrl       String?       // QR code URL
+  status      ListingStatus @default(AVAILABLE)
+  sellerId    String
+  seller      User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  isDeleted   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("listings")
+}
+
+model BorrowRequest {
+  id         String              @id @default(cuid())
+  itemName   String
+  reason     String
+  budgetRange String
+  neededFor  String              // Duration
+  requesterId String
+  requester  User                @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+  status     BorrowRequestStatus @default(OPEN)
+  isDeleted  Boolean             @default(false)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@map("borrow_requests")
+}
+
+model NightMarketPost {
+  id         String   @id @default(cuid())
+  item       String
+  price      Float
+  quantity   Int
+  hostel     String
+  sellerId   String
+  seller     User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  isAvailable Boolean  @default(true)
+  isDeleted  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("night_market_posts")
+}
+
+model Notification {
+  id      String   @id @default(cuid())
+  userId  String
+  message String
+  isRead  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
